@@ -43,7 +43,7 @@ cd jarvis-assistant
 
 ```bash
 python -m venv .venv
-.\.venv\Scriptsctivate
+.\.venv\Scripts\activate
 ```
 
 3. Установи зависимости:
@@ -56,12 +56,6 @@ pip install -r requirements.txt
 
 ```bash
 python app/main.py
-```
-
-5. (или Web-интерфейс):
-
-```bash
-python gui/web_app.py
 ```
 
 ## ⚙️ Требования
