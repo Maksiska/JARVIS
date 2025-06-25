@@ -1,0 +1,9 @@
+langchain
+ollama
+qdrant-client
+SpeechRecognition
+pyttsx3
+pyaudio
+python-dotenv
+flask
+taipy
