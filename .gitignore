@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.log
+*.tmp
+*.bak
+.env
+.vscode/
+.idea/
+ollama_models/
+qdrant_storage/
+chromadb/
+*.sqlite
+Thumbs.db
+.DS_Store
