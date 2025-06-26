@@ -3,48 +3,37 @@ from input.transcription import transcribe_audio
 
 recognizer = sr.Recognizer()
 
-def wait_for_wake_word(wake_word="джарвис", timeout=3, phrase_time_limit=3) -> bool:
+def listen_full_phrase(wake_word="джарвис", timeout=8, pause_threshold=1.2):
     """
-    Слушает короткие фрагменты и активируется при обнаружении ключевого слова.
-    """
-    print("🔎 Ожидаю активационное слово 'Jarvis'...")
-    recognizer.energy_threshold = 300
-    recognizer.pause_threshold = 1.0
-
-    while True:
-        try:
-            with sr.Microphone() as source:
-                recognizer.adjust_for_ambient_noise(source, duration=1)
-                audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
-                text = transcribe_audio(audio).lower()
-                print(f"📥 Услышано: {text}")
-                if wake_word.lower() in text:
-                    print("✅ Обнаружено имя 'Jarvis'. Готов к команде.")
-                    return True
-        except sr.WaitTimeoutError:
-            print("⌛ Нет речи. Повторная попытка.")
-        except Exception as e:
-            print(f"❌ Ошибка при прослушивании: {e}")
-            continue
-
-def listen_command(timeout=8, pause_threshold=1.2, phrase_time_limit=None):
-    """
-    Слушает полноценную фразу после активации.
+    Слушает полную фразу с ключевым словом ('джарвис команда ...')
     """
     recognizer.pause_threshold = pause_threshold
     recognizer.energy_threshold = 300
 
-    try:
-        with sr.Microphone() as source:
-            print("🎤 Слушаю команду...")
-            recognizer.adjust_for_ambient_noise(source, duration=1)
-            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
-            print("✅ Команда записана.")
-            return audio
-    except sr.WaitTimeoutError:
-        print("⌛ Никто не говорит. Пропуск.")
-        return None
-    except Exception as e:
-        print(f"❌ Ошибка при записи команды: {e}")
+    with sr.Microphone() as source:
+        print("🎤 Слушаю полную фразу...")
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+        try:
+            audio = recognizer.listen(source, timeout=timeout)
+            print("✅ Фраза записана.")
+        except sr.WaitTimeoutError:
+            print("⌛ Время ожидания истекло.")
+            return None
+
+    # Преобразуем в текст
+    text_raw = transcribe_audio(audio)
+    if not text_raw:
+        print("🤷 Ничего не распознано.")
         return None
 
+    text = text_raw.lower()
+    print(f"[DEBUG] Распознано: {text}")
+
+    # Проверяем наличие wake word
+    if wake_word in text:
+        command = text.split(wake_word, 1)[1].strip()
+        print(f"📋 Команда: {command}")
+        return command
+    else:
+        print("❌ Слово 'Jarvis' не услышал.")
+        return None
