@@ -2,11 +2,29 @@ import os
 import subprocess
 import webbrowser
 
+def _find_chrome() -> str | None:
+    """Try to locate Chrome in standard Windows locations."""
+    possible = [
+        os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
+                     "Google", "Chrome", "Application", "chrome.exe"),
+        os.path.join(os.environ.get("PROGRAMFILES(X86)", "C:\\Program Files (x86)"),
+                     "Google", "Chrome", "Application", "chrome.exe"),
+        os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~\\AppData\\Local")),
+                     "Google", "Chrome", "Application", "chrome.exe"),
+    ]
+    for path in possible:
+        if os.path.exists(path):
+            return path
+    return None
+
 # Программы (пути можно дополнить под свою систему)
+_CHROME = _find_chrome() or "chrome"
+
 APP_PATHS = {
     "telegram": "C:\\Users\\rm240\\AppData\\Roaming\\Telegram Desktop\\Telegram.exe",
     "discord": "C:\\Path\\Discord.exe",
-    "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    "chrome": _CHROME,
+    "browser": _CHROME,
 }
 
 # Известные папки
@@ -21,11 +39,23 @@ def execute_action(action_type: str, action_target: str) -> tuple[bool, str]:
     try:
         if action_type == "launch_app":
             app_name = action_target.lower()
-            if app_name in APP_PATHS:
-                subprocess.Popen(APP_PATHS[app_name])
-                return True, f"Запускаю {action_target}."
-            else:
-                return False, f"Не знаю путь для программы '{action_target}'."
+            target = APP_PATHS.get(app_name)
+
+            if target:
+                try:
+                    subprocess.Popen(target)
+                    return True, f"Запускаю {action_target}."
+                except Exception:
+                    pass  # попробуем резервный способ
+
+            if app_name in ("browser", "chrome"):
+                try:
+                    webbrowser.get().open("")
+                    return True, "Запускаю браузер."
+                except Exception:
+                    return False, "Не удалось найти путь до браузера."
+
+            return False, f"Не знаю путь для программы '{action_target}'."
 
         elif action_type == "open_url":
             webbrowser.open(action_target)
