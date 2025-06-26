@@ -1,8 +1,6 @@
-from input.vad import wait_for_wake_word, listen_command
-from input.transcription import transcribe_audio
+from input.vad import listen_full_phrase
 from core.agent import process_input
 from core.memory import load_from_file, save_to_file
-from utils.helpers import debug_log
 
 def main():
     print("🧠 Jarvis Assistant запущен.")
@@ -10,24 +8,17 @@ def main():
 
     try:
         while True:
-            if wait_for_wake_word():
-                audio = listen_command()
-                if not audio:
-                    continue
+            command_text = listen_full_phrase()
 
-                text = transcribe_audio(audio)
-                if not text.strip():
-                    print("🤷 Пустой запрос. Повторите.")
-                    continue
-
-                debug_log(f"📥 Получено: {text}")
-                keep_running = process_input(text)
-
+            if command_text:
+                keep_running = process_input(command_text)
                 if not keep_running:
                     break
+            else:
+                print("Ожидаю новую команду...")
 
     except KeyboardInterrupt:
-        print("\n🛑 Принудительное завершение работы.")
+        print("\n🛑 Принудительное завершение.")
     finally:
         save_to_file()
         print("💾 История сохранена. Пока!")
