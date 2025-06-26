@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OllamaEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain.schema.document import Document
 
 load_dotenv()
@@ -29,7 +29,7 @@ def add_command(text: str, action_dict: dict):
     print(f"✅ Добавлено в БД: '{text}' → {metadata}")
 
 def search_similar_command(query: str, k: int = 1, threshold: float = 0.8) -> dict | None:
-    results = db.similarity_search_with_score(query, k=k)
+    results = db.similarity_search_with_relevance_scores(query, k=k)
     if not results:
         return None
     doc, score = results[0]

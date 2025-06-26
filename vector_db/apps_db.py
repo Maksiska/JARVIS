@@ -26,7 +26,7 @@ def add_app_command(command_text: str, action_type: str, action_target: str):
     print(f"✅ Команда сохранена: '{command_text}' → {action_target}")
 
 def search_command(user_input: str, threshold=0.8, k=1) -> dict | None:
-    results = apps_db.similarity_search_with_score(user_input, k=k)
+    results = apps_db.similarity_search_with_relevance_scores(user_input, k=k)
     if not results:
         return None
     doc, score = results[0]
