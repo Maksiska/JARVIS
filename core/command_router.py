@@ -31,7 +31,10 @@ def route_command(command_text: str) -> str:
 
     # === Команда "открой папку ..."
     if command_text.lower().startswith("открой папку"):
-        folder_name = command_text.split("открой папку", 1)[1].strip()
+        prefix = "открой папку"
+        folder_name = command_text[len(prefix):].strip()
+        if not folder_name:
+            return "Какую папку открыть?"
 
         result = search_command(folder_name)
         if result:
