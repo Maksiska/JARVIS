@@ -3,6 +3,7 @@ from core.actions import execute_action
 from llm.ollama_client import ask_llm
 from llm.action_interpreter import interpret_action
 from vector_db.similarity_search import get_or_create_response
+from vector_db.cromadb_interface import add_command
 from core.path_search import search_paths_interactive, ask_user_choose_path
 import os
 
@@ -15,15 +16,18 @@ def route_command(command_text: str) -> str:
 
         paths_found = search_paths_interactive(target_name)
         if paths_found:
-            for path in paths_found:
-                add_app_command(target_name, "open_path", path)
-
             if len(paths_found) == 1:
-                return execute_action("open_path", paths_found[0])
+                success, msg = execute_action("open_path", paths_found[0])
+                if success:
+                    add_app_command(target_name, "open_path", paths_found[0])
+                return msg
             else:
                 chosen = ask_user_choose_path(paths_found)
                 if chosen:
-                    return execute_action("open_path", chosen)
+                    success, msg = execute_action("open_path", chosen)
+                    if success:
+                        add_app_command(target_name, "open_path", chosen)
+                    return msg
                 else:
                     return "Выбор отменён."
         else:
@@ -38,22 +42,26 @@ def route_command(command_text: str) -> str:
             print(f"[DEBUG] Найдено в apps_db: {result}")
             path = result["action_target"]
             if os.path.exists(path):
-                return execute_action("open_path", path)
+                _, msg = execute_action("open_path", path)
+                return msg
             else:
                 return "⚠️ Путь не существует. Скажи: 'переобучи название' чтобы обновить."
 
         print("Запускаю поиск по дискам...")
         paths_found = search_paths_interactive(folder_name)
         if paths_found:
-            for path in paths_found:
-                add_app_command(folder_name, "open_path", path)
-
             if len(paths_found) == 1:
-                return execute_action("open_path", paths_found[0])
+                success, msg = execute_action("open_path", paths_found[0])
+                if success:
+                    add_app_command(folder_name, "open_path", paths_found[0])
+                return msg
             else:
                 chosen = ask_user_choose_path(paths_found)
                 if chosen:
-                    return execute_action("open_path", chosen)
+                    success, msg = execute_action("open_path", chosen)
+                    if success:
+                        add_app_command(folder_name, "open_path", chosen)
+                    return msg
                 else:
                     return "Выбор отменён."
         else:
@@ -67,19 +75,25 @@ def route_command(command_text: str) -> str:
         if result["action_type"] == "open_path":
             path = result["action_target"]
             if os.path.exists(path):
-                return execute_action("open_path", path)
+                _, msg = execute_action("open_path", path)
+                return msg
             else:
                 return "⚠️ Путь не существует. Скажи: 'переобучи название' чтобы обновить."
         else:
-            return execute_action(result["action_type"], result["action_target"])
+            _, msg = execute_action(result["action_type"], result["action_target"])
+            return msg
 
     # === Поиск в ChromaDB → LLM → обучение
     print("🔍 Поиск в ChromaDB...")
-    action = get_or_create_response(command_text, interpret_action)
+    action, should_add = get_or_create_response(command_text, interpret_action)
 
     if action["action_type"] != "unknown":
-        add_app_command(command_text, action["action_type"], action["action_target"])
-        return execute_action(action["action_type"], action["action_target"])
+        success, msg = execute_action(action["action_type"], action["action_target"])
+        if success:
+            if should_add:
+                add_command(command_text, action)
+            add_app_command(command_text, action["action_type"], action["action_target"])
+        return msg
 
     # === Если LLM не поняла → короткий ответ
     print("LLM не распознала команду → отвечаю коротко")
