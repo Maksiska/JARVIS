@@ -1,4 +1,5 @@
 import re
+import json
 
 def clean_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text.strip())
@@ -17,3 +18,15 @@ def normalize_text_for_vector(text: str) -> str:
     text = clean_text(text)
     text = re.sub(r'[^\w\s]', '', text.lower())
     return text
+
+def extract_json_from_text(text: str):
+    """Return a JSON object parsed from a text that may contain extra text."""
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end != -1 and start < end:
+        json_str = text[start:end + 1]
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            return None
+    return None
