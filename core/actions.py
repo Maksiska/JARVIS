@@ -1,6 +1,7 @@
 import os
 import subprocess
 import webbrowser
+from core.path_search import search_paths_interactive, ask_user_choose_path, open_path
 
 # Программы (пути можно дополнить под свою систему)
 APP_PATHS = {
@@ -47,6 +48,22 @@ def execute_action(action_type: str, action_target: str) -> str:
                 return f"Открываю {action_target}."
             else:
                 return f"⚠️ Путь {action_target} больше не существует."
+
+        elif action_type == "search_files":
+            paths_found = search_paths_interactive(action_target)
+            if paths_found:
+                if len(paths_found) == 1:
+                    open_path(paths_found[0])
+                    return f"Открываю {paths_found[0]}."
+                else:
+                    chosen = ask_user_choose_path(paths_found)
+                    if chosen:
+                        open_path(chosen)
+                        return f"Открываю {chosen}."
+                    else:
+                        return "Выбор отменён."
+            else:
+                return "Ничего не найдено."
 
         else:
             return "Неизвестный тип действия."

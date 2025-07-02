@@ -78,7 +78,8 @@ def route_command(command_text: str) -> str:
     action = get_or_create_response(command_text, interpret_action)
 
     if action["action_type"] != "unknown":
-        add_app_command(command_text, action["action_type"], action["action_target"])
+        if action["action_type"] != "search_files":
+            add_app_command(command_text, action["action_type"], action["action_target"])
         return execute_action(action["action_type"], action["action_target"])
 
     # === Если LLM не поняла → короткий ответ
