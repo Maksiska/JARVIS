@@ -14,6 +14,9 @@ EXAMPLES = """
 Вход: "выключи компьютер"
 Ответ: {"action_type": "shutdown", "action_target": "", "console_command": "shutdown /s /t 3"}
 
+Вход: "найди файл report"
+Ответ: {"action_type": "search_files", "action_target": "report", "console_command": ""}
+
 Вход: "прочитай анекдот"
 Ответ: {"action_type": "unknown", "action_target": "", "console_command": ""}
 """
@@ -31,8 +34,8 @@ def interpret_action(user_text: str) -> dict:
 }}
 
 Где:
-- action_type — тип действия (например: "launch_app", "open_folder", "open_url", "shutdown", "unknown")
-- action_target — цель (например: "browser", "Downloads", "https://youtube.com")
+- action_type — тип действия (например: "launch_app", "open_folder", "open_url", "search_files", "shutdown", "unknown")
+- action_target — цель (например: "browser", "Downloads", "report")
 - console_command — фактическая консольная команда, которая будет выполнена (например: "start chrome", "start D:\\Projects\\AI", "shutdown /s /t 3")
 
 Примеры:
