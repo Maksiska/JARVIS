@@ -4,6 +4,7 @@ from langchain.schema.document import Document
 from core import config
 import json
 from llm.ollama_client import ask_llm
+from utils.helpers import extract_json_from_text
 
 embedding = OllamaEmbeddings(model=config.OLLAMA_MODEL)
 
@@ -82,10 +83,8 @@ def ask_llm_action_classify(user_input: str) -> dict:
     llm_response = ask_llm(full_prompt)
     print("[DEBUG] Ответ LLM:", llm_response)
 
-    try:
-        json_start = llm_response.find("{")
-        json_str = llm_response[json_start:]
-        return json.loads(json_str)
-    except Exception as e:
-        print(f"❌ Ошибка парсинга JSON: {e}")
-        return {"action_type": "unknown", "action_target": ""}
+    parsed = extract_json_from_text(llm_response)
+    if parsed is not None:
+        return parsed
+    print(f"❌ Ошибка парсинга JSON")
+    return {"action_type": "unknown", "action_target": ""}

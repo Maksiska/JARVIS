@@ -1,5 +1,5 @@
 from llm.ollama_client import ask_llm
-import json
+from utils.helpers import extract_json_from_text
 
 EXAMPLES = """
 Вход: "открой браузер"
@@ -49,13 +49,8 @@ def interpret_action(user_text: str) -> dict:
     raw_response = ask_llm(prompt)
     print(f"[DEBUG] Ответ LLM:\n{raw_response}")
 
-    # Попытаемся распарсить JSON
-    try:
-        parsed = json.loads(raw_response)
-        if "action_type" in parsed and "action_target" in parsed and "console_command" in parsed:
-            return parsed
-        else:
-            return {"action_type": "unknown", "action_target": "", "console_command": ""}
-    except json.JSONDecodeError:
-        print("⚠️ Некорректный JSON от LLM!")
-        return {"action_type": "unknown", "action_target": "", "console_command": ""}
+    parsed = extract_json_from_text(raw_response)
+    if parsed and "action_type" in parsed and "action_target" in parsed and "console_command" in parsed:
+        return parsed
+    print("⚠️ Некорректный JSON от LLM!")
+    return {"action_type": "unknown", "action_target": "", "console_command": ""}
