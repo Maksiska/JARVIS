@@ -37,29 +37,37 @@ def search_command(user_input: str, threshold=0.8, k=1) -> dict | None:
 
 def ask_llm_action_classify(user_input: str) -> dict:
     system_prompt = """
-    Ты — помощник для голосового ассистента Jarvis.
+    Ты — модуль классификации команд в проекте Jarvis.
+    Определи действие пользователя и верни результат в формате JSON.
 
-    Определи, что делает команда пользователя:
-    - "launch_app" — запуск программы (например: Telegram, Chrome, VLC)
-    - "open_url" — открыть сайт (URL, например: https://youtube.com)
-    - "open_folder" — открыть стандартную папку (Downloads, Documents, Desktop)
-    - "open_path" — открыть конкретный путь на диске
+    Jarvis запускает приложения следующим образом:
+    - для встроенных программ Windows указывай их короткое имя (например: notepad, calc);
+    - для сторонних программ указывай название. Jarvis будет искать файл "<название>.exe" и запускать его (пример: telegram.exe).
+
+    Возможные действия:
+    - "launch_app" — запуск программы
+    - "open_url" — открыть сайт
+    - "open_folder" — открыть стандартную папку
+    - "open_path" — открыть конкретный путь
     - "volume_up" — увеличить громкость
     - "volume_down" — уменьшить громкость
-    - "unknown" — если не удалось определить
+    - "unknown" — если действие определить нельзя
 
-    Формат ответа — СТРОГО JSON:
+    Формат ответа строго JSON:
     {
         "action_type": "...",
         "action_target": "..."
     }
 
-    Отвечай КРАТКО. Никаких объяснений, только JSON.
+    Никаких пояснений. Только JSON.
 
     Примеры:
 
-    Вход: "открой браузер"
-    Ответ: {"action_type": "launch_app", "action_target": "browser"}
+    Вход: "открой блокнот"
+    Ответ: {"action_type": "launch_app", "action_target": "notepad"}
+
+    Вход: "открой телеграм"
+    Ответ: {"action_type": "launch_app", "action_target": "telegram"}
 
     Вход: "увеличь громкость"
     Ответ: {"action_type": "volume_up", "action_target": ""}
