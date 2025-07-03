@@ -1,43 +1,44 @@
 import os
 import string
 import subprocess
+import ctypes
 
 def get_all_disks():
-    disks = []
-    for drive in string.ascii_uppercase:
-        drive_path = f"{drive}:\\" 
-        if os.path.exists(drive_path):
-            disks.append(drive_path)
-    return disks
+    return [f"{d}:\\" for d in string.ascii_uppercase if os.path.exists(f"{d}:\\")]
 
-def search_exact_folder(target_name):
-    found_folders = []
-    disks = get_all_disks()
-    print(f"Поиск папок: '{target_name}'\n")
-
-    for disk in disks:
-        print(f"Идёт поиск на {disk}...")
+def search_folder(target_name):
+    found = []
+    print(f"🔍 Поиск папок: '{target_name}'")
+    for disk in get_all_disks():
+        print(f"   📂 Диск {disk}...")
         for root, dirs, _ in os.walk(disk):
-            for dir_name in dirs:
-                if dir_name.lower() == target_name.lower():
-                    full_path = os.path.join(root, dir_name)
-                    found_folders.append(full_path)
-    return found_folders
-
-def search_files_any_extension(target_name):
-    found_files = []
-    disks = get_all_disks()
-    print(f"\nПапка не найдена. Ищем файлы: '{target_name}.*'\n")
-
-    for disk in disks:
-        print(f"Идёт поиск на {disk}...")
-        for root, _, files in os.walk(disk):
-            for file_name in files:
-                name, _ = os.path.splitext(file_name)
+            for name in dirs:
                 if name.lower() == target_name.lower():
-                    full_path = os.path.join(root, file_name)
-                    found_files.append(full_path)
-    return found_files
+                    found.append(os.path.join(root, name))
+    return found
+
+def search_files(target_name):
+    found = []
+    print(f"🔍 Поиск файлов: '{target_name}.*'")
+    for disk in get_all_disks():
+        print(f"   📁 Диск {disk}...")
+        for root, _, files in os.walk(disk):
+            for file in files:
+                name, _ = os.path.splitext(file)
+                if name.lower() == target_name.lower():
+                    found.append(os.path.join(root, file))
+    return found
+
+def search_applications(target_name):
+    found = []
+    print(f"🔍 Поиск приложений: '{target_name}.exe'")
+    for disk in get_all_disks():
+        print(f"   📁 Диск {disk}...")
+        for root, _, files in os.walk(disk):
+            for file in files:
+                if file.lower() == target_name.lower() + ".exe":
+                    found.append(os.path.join(root, file))
+    return found
 
 def open_path(path):
     if os.path.isdir(path):
@@ -45,35 +46,75 @@ def open_path(path):
     elif os.path.isfile(path):
         subprocess.run(f'explorer /select,"{path}"')
 
-def search_paths_interactive(target_name: str):
-    folders = search_exact_folder(target_name)
-
-    if folders:
-        print(f"\nНайдено папок: {len(folders)}")
-        return folders
-    else:
-        files = search_files_any_extension(target_name)
-        if files:
-            print(f"\nНайдено файлов: {len(files)}")
-            return files
-        else:
-            print("\nНичего не найдено.")
-            return None
-
 def ask_user_choose_path(paths):
-    print("\nНайдено несколько вариантов:")
-    for idx, path in enumerate(paths, start=1):
-        print(f"{idx}) {path}")
-
+    print("\n🔎 Найдено несколько вариантов:")
+    for i, path in enumerate(paths, 1):
+        print(f"{i}) {path}")
     while True:
-        choice = input("\nВыберите номер (или 0 для отмены): ")
+        choice = input("\n👉 Выберите номер (или 0 для отмены): ")
         if choice.isdigit():
-            choice = int(choice)
-            if choice == 0:
+            idx = int(choice)
+            if idx == 0:
                 return None
-            elif 1 <= choice <= len(paths):
-                return paths[choice - 1]
-            else:
-                print("Некорректный номер.")
-        else:
-            print("Введите цифру.")
+            if 1 <= idx <= len(paths):
+                return paths[idx - 1]
+        print("⚠️ Некорректный выбор.")
+
+
+def search_paths_interactive_folder(target_name: str):
+    folders = search_folder(target_name)
+    if not folders:
+        print("\n❌ Папки не найдены.")
+        return None
+
+    print(f"\n✅ Найдено папок: {len(folders)}")
+    if len(folders) == 1:
+        open_path(folders[0])
+        return folders[0]
+
+    chosen = ask_user_choose_path(folders)
+    if chosen:
+        open_path(chosen)
+        return chosen
+    return None
+
+def search_paths_interactive_file(target_name: str):
+    files = search_files(target_name)
+    if not files:
+        print("\n❌ Файлы не найдены.")
+        return None
+
+    print(f"\n✅ Найдено файлов: {len(files)}")
+    if len(files) == 1:
+        open_path(files[0])
+        return files[0]
+
+    chosen = ask_user_choose_path(files)
+    if chosen:
+        open_path(chosen)
+        return chosen
+    return None
+
+def search_paths_interactive_app(target_name: str):
+    apps = search_applications(target_name)
+    if not apps:
+        print("\n❌ Приложения не найдены.")
+        return None
+
+    def launch(path):
+        try:
+            print(f"[DEBUG] Что запускаем: {path}")
+            import ctypes
+            ctypes.windll.shell32.ShellExecuteW(
+                None, "runas", path, None, None, 1
+            )
+        except Exception as e:
+            print(f"⚠️ Ошибка запуска: {e}")
+
+    launch(apps[0])
+
+    return None
+
+
+
+
