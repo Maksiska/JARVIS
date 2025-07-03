@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OllamaEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain.schema.document import Document
+from core.semantic_cleaner import semantic_clean_via_llm
 
 load_dotenv()
 
@@ -18,18 +19,24 @@ db = Chroma(
 )
 
 def add_command(text: str, action_dict: dict):
+    cleaned = semantic_clean_via_llm(text)
+    if search_similar_command(cleaned, threshold=0.95):
+        print(f"⚠️ Похожая команда уже есть в базе: {cleaned}")
+        return
+
     metadata = {
         "action_type": action_dict.get("action_type", "unknown"),
         "action_target": action_dict.get("action_target", ""),
         "console_command": action_dict.get("console_command", "")
     }
-    doc = Document(page_content=text, metadata=metadata)
+    doc = Document(page_content=cleaned, metadata=metadata)
     db.add_documents([doc])
     db.persist()
-    print(f"✅ Добавлено в БД: '{text}' → {metadata}")
+    print(f"✅ Добавлено в БД: '{cleaned}' → {metadata}")
 
 def search_similar_command(query: str, k: int = 1, threshold: float = 0.8) -> dict | None:
-    results = db.similarity_search_with_score(query, k=k)
+    cleaned = semantic_clean_via_llm(query)
+    results = db.similarity_search_with_relevance_scores(cleaned, k=k)
     if not results:
         return None
     doc, score = results[0]
